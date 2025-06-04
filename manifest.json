@@ -1,0 +1,21 @@
+{
+  "id": "dev.yofukashino.VoiceMessages",
+  "name": "VoiceMessages",
+  "description": "Allows Users to send voice messages from desktop",
+  "author": {
+    "discordID": "1121961711080050780",
+    "name": "Nanakusa",
+    "github": "yofukashino"
+  },
+  "version": "1.0.0",
+  "updater": {
+    "id": "yofukashino/VoiceMessages",
+    "type": "github"
+  },
+  "license": "MIT",
+  "type": "replugged-plugin",
+  "renderer": "src/index.ts",
+  "source": "https://github.com/yofukashino/VoiceMessages",
+  "plaintextPatches": "src/plaintextPatches.ts",
+  "image": ["https://i.imgur.com/14CNs3a.png?CHANGE-THIS-URL"]
+}
