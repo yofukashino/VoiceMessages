@@ -1,4 +1,8 @@
-import { constants as DiscordConstants, modal as ModalActions } from "replugged/common";
+import {
+  constants as DiscordConstants,
+  modal as ModalActions,
+  users as UltimateUserStore,
+} from "replugged/common";
 import { ContextMenu } from "replugged/components";
 import { PluginInjectorUtils } from "../index";
 import Modules from "../lib/requiredModules";
@@ -11,10 +15,19 @@ export default (): void => {
     Types.DefaultTypes.ContextMenuTypes.ChannelAttach,
     ({ channel }: { channel: Types.Channel }, menu: Types.MenuProps): React.ReactElement | void => {
       const { PermissionUtils } = Modules;
+      const user = UltimateUserStore.getCurrentUser();
       if (
         channel.getGuildId() &&
-        !PermissionUtils.can(DiscordConstants.Permissions.SEND_MESSAGES, channel) &&
-        !PermissionUtils.can(DiscordConstants.Permissions.SEND_VOICE_MESSAGES, channel)
+        !PermissionUtils.can({
+          permission: DiscordConstants.Permissions.SEND_MESSAGES,
+          context: channel,
+          user,
+        }) &&
+        !PermissionUtils.can({
+          permission: DiscordConstants.Permissions.SEND_VOICE_MESSAGES,
+          context: channel,
+          user,
+        })
       )
         return;
 
