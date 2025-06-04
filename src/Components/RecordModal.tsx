@@ -55,7 +55,9 @@ export default React.memo((props: { onClose: () => void; channel: Types.Channel 
         Toast.toast("Can't process multiple files. Add one image at a time.", Toast.Kind.FAILURE);
         return;
       }
-      if (!extensions.some((e) => event.dataTransfer.files[0].type.includes(e))) {
+      if (
+        ![...extensions, "audio/mpeg"].some((e) => event.dataTransfer.files[0].type.includes(e))
+      ) {
         Toast.toast("Unsupported Format.", Toast.Kind.FAILURE);
         return;
       }
