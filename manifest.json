@@ -7,7 +7,7 @@
     "name": "Nanakusa",
     "github": "yofukashino"
   },
-  "version": "1.0.0",
+  "version": "1.0.002",
   "updater": {
     "id": "dev.yofukashino.VoiceMessages",
     "type": "store"

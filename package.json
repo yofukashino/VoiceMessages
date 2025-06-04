@@ -1,6 +1,6 @@
 {
   "name": "voice-messages",
-  "version": "1.0.001",
+  "version": "1.0.002",
   "description": "Allows Users to send voice messages from desktop",
   "engines": {
     "node": ">=20.0.0",
