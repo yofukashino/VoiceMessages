@@ -9,8 +9,8 @@
   },
   "version": "1.0.0",
   "updater": {
-    "id": "yofukashino/VoiceMessages",
-    "type": "github"
+    "id": "dev.yofukashino.VoiceMessages",
+    "type": "store"
   },
   "license": "MIT",
   "type": "replugged-plugin",
