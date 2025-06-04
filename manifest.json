@@ -16,7 +16,6 @@
   "type": "replugged-plugin",
   "renderer": "src/index.ts",
   "source": "https://github.com/yofukashino/VoiceMessages",
-  "plaintextPatches": "src/plaintextPatches.ts",
   "image": [
     "https://github.com/yofukashino/VoiceMessages/blob/76f5f01e4d92078c58986a2e9845c8ed9304cb6d/assets/preview.png"
   ]
