@@ -214,7 +214,7 @@ export const sendVoiceMessage = ({
 
   cloudUploader.on("error", failed);
   cloudUpload.on("error", failed);
-
+  void cloudUpload.upload();
   void cloudUploader.uploadFiles([cloudUpload], messagePayload);
 };
 
