@@ -12,11 +12,11 @@ export const mic = ({
       />
 
       <path
+        className="vmm-transparent-fill"
         d="M5 11C5 14.87 8.13 18 12 18C15.87 18 19 14.87 19 11"
         stroke-width="2"
         stroke-linecap="round"
         style={{
-          fill: "transparent",
           stroke: "currentColor",
         }}
       />

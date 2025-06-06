@@ -76,3 +76,7 @@
   box-sizing: border-box;
   filter: brightness(1.5) saturate(1.5);
 }
+
+path.vmm-transparent-fill {
+  fill: transparent !important;
+}
