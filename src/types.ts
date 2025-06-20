@@ -9,7 +9,6 @@ import type { Store } from "replugged/dist/renderer/modules/common/flux";
 import type util from "replugged/util";
 import type GeneralDiscordTypes from "discord-types/general";
 import type React from "react";
-import type { CloudUploader as CloudUploaderType } from "./uploaderTypes-fede/CloudUploader";
 import type { CloudUpload as CloudUploadType } from "./uploaderTypes-fede/CloudUpload";
 
 export namespace Types {
@@ -21,7 +20,6 @@ export namespace Types {
   export type UtilTree = util.Tree;
   export type ReactTree = util.Tree & React.ReactElement;
   export type ChannelMessages = typeof ChannelMessagesType;
-  export type CloudUploader = typeof CloudUploaderType;
   export type CloudUpload = typeof CloudUploadType;
   export type SendMessageOptionsForReply = SendMessageOptionsForReplyType;
   export type MenuProps = React.ComponentProps<ContextMenuType["ContextMenu"]> & {
@@ -235,8 +233,6 @@ export namespace Types {
     loadModules?: () => Promise<void>;
     FileInput?: typeof FileInput;
     VoiceMessage?: VoiceMessage;
-    CloudUploader?: CloudUploader;
-    MessageRecordUtils?: MessageRecordUtils;
     FileSizeLimits?: FileSizeLimits;
     CloudUpload?: CloudUpload;
     SizeParser?: SizeParser;

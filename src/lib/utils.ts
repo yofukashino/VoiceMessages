@@ -1,10 +1,8 @@
 import { util, webpack } from "replugged";
 import {
-  constants as DiscordConstants,
   fluxDispatcher as FluxDispatcher,
   toast as Toast,
   messages as UltimateMessageStore,
-  users as UltimateUserStore,
 } from "replugged/common";
 import Modules from "./requiredModules";
 import Types from "../types";
@@ -136,7 +134,7 @@ export const sendVoiceMessage = ({
   waveform: string;
   durationSecs: number;
 }): void => {
-  const { PendingReplyStore, CloudUpload, CloudUploader, MessageRecordUtils } = Modules;
+  const { PendingReplyStore, CloudUpload } = Modules;
   const replyOptions: Types.SendMessageOptionsForReply =
     UltimateMessageStore.getSendMessageOptionsForReply(
       PendingReplyStore.getPendingReply(channelId),
@@ -158,64 +156,35 @@ export const sendVoiceMessage = ({
   cloudUpload.durationSecs = durationSecs;
   cloudUpload.waveform = waveform;
 
-  const cloudUploader = new CloudUploader(
-    (DiscordConstants.Endpoints.MESSAGES as (id: string) => string)(channelId),
-    "POST",
-  );
-
   const messagePayload = {
     flags: 1 << 13,
     channel_id: channelId,
     content: "",
     sticker_ids: [],
+    validNonShortcutEmojis: [],
     type: 0,
     message_reference: replyOptions?.messageReference || null,
     nonce: timestampToSnowflake(Date.now()),
   };
 
-  const messageRecord = MessageRecordUtils.createMessageRecord({
-    ...messagePayload,
-    author: UltimateUserStore.getCurrentUser(),
-    id: cloudUpload.id,
-  });
-  cloudUploader.on("start", (file) => {
-    FluxDispatcher.dispatch({
-      type: "UPLOAD_START",
-      channelId,
-      file,
-      message: messageRecord,
-      uploader: cloudUploader,
-    });
-  });
-
-  cloudUploader.on("progress", (file) => {
-    FluxDispatcher.dispatch({
-      type: "UPLOAD_PROGRESS",
-      channelId,
-      file,
-    });
-  });
-
-  cloudUploader.on("complete", (file, uploadedMessage) => {
-    FluxDispatcher.dispatch({
-      type: "UPLOAD_COMPLETE",
-      channelId,
-      file,
-      aborted: cloudUploader._aborted,
-      messageRecord: uploadedMessage,
-    });
-    Toast.toast("Successfully uploaded voice message", Toast.Kind.SUCCESS);
-  });
-
   const failed = (...args): void => {
-    PluginLogger.error(...args);
+    PluginLogger.error("Failed to upload voice message", ...args);
     Toast.toast("Failed to upload voice message", Toast.Kind.FAILURE);
+    UltimateMessageStore.clearChannel(channelId);
   };
 
-  cloudUploader.on("error", failed);
   cloudUpload.on("error", failed);
-  void cloudUpload.upload();
-  void cloudUploader.uploadFiles([cloudUpload], messagePayload);
+
+  if (cloudUpload.status !== "ERROR")
+    void UltimateMessageStore.sendMessage(channelId, messagePayload, null, {
+      // @ts-expect-error type required to be updated in replugged
+      attachmentsToUpload: [cloudUpload],
+      onAttachmentUploadError: failed,
+      ...messagePayload,
+    }).then(() => {
+      if (cloudUpload._aborted)
+        Toast.toast("Successfully uploaded voice message", Toast.Kind.SUCCESS);
+    });
 };
 
 export const unmangleExports = <T>(

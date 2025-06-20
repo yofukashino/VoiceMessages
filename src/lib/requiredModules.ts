@@ -58,30 +58,6 @@ Modules.loadModules = async (): Promise<void> => {
       throw new Error("Failed To Find CloudUpload Module");
     });
 
-  Modules.CloudUploader = await webpack
-    .waitForModule<Types.CloudUploader>(webpack.filters.bySource("_createMessage"), {
-      timeout: 10000,
-    })
-    .catch(() => {
-      throw new Error("Failed To Find CloudUploader Module");
-    });
-
-  Modules.MessageRecordUtils = await webpack
-    .waitForModule<Types.DefaultTypes.RawModule>(
-      webpack.filters.bySource('id:"???",username:"???"'),
-      {
-        timeout: 10000,
-        raw: true,
-      },
-    )
-    .then((v) =>
-      Utils.unmangleExports<Types.MessageRecordUtils>(v, {
-        createMessageRecord: ".isBlockedForMessage(",
-      }),
-    )
-    .catch(() => {
-      throw new Error("Failed To Find MessageRecordUtils Module");
-    });
   Modules.PermissionUtils ??= await webpack
     .waitForModule<Types.DefaultTypes.RawModule>(
       webpack.filters.bySource(".computeLurkerPermissionsAllowList()"),
