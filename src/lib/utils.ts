@@ -45,7 +45,11 @@ export const setLoopback = ({ enabled, volume }: { enabled: boolean; volume: num
   });
 };
 
-export const startRecording = (name: string, callback: (file: File) => void): void => {
+export const startRecording = (
+  name: string,
+  callback: (file: File) => void,
+  previousBuffer?: ArrayBuffer,
+): void => {
   const { MediaEngineStore } = Modules;
   const MediaEngine = MediaEngineStore.getMediaEngine();
   if (!MediaEngine) return;
@@ -60,42 +64,49 @@ export const startRecording = (name: string, callback: (file: File) => void): vo
     const blockAlign = numChannels * bytesPerSample;
     const byteRate = sampleRate * blockAlign;
     const wavHeaderSize = 44;
-    const buffer = new ArrayBuffer(wavHeaderSize + samples.length * bytesPerSample);
+    const previousBufferSize = previousBuffer?.byteLength
+      ? previousBuffer?.byteLength - wavHeaderSize
+      : 0;
+    const buffer = new ArrayBuffer(
+      wavHeaderSize + previousBufferSize + samples.length * bytesPerSample,
+    );
     const view = new DataView(buffer);
+
+    if (previousBuffer) {
+      new Uint8Array(buffer).set(new Uint8Array(previousBuffer, wavHeaderSize), wavHeaderSize);
+    }
 
     const writeString = (view, str, offset): number => {
       [...str].forEach((char, i) => view.setUint8(offset + i, char.charCodeAt(0)));
       return offset + str.length;
     };
 
-    const getHeaderOffset = (view, samples, numChannels, sampleRate): number => {
-      const offsetAfterRiff = writeString(view, "RIFF", 0);
-      view.setUint32(offsetAfterRiff, 36 + samples.length * bytesPerSample, true);
-      const offsetAfterChunkSize = offsetAfterRiff + 4;
-      const offsetAfterWave = writeString(view, "WAVE", offsetAfterChunkSize); //
+    const dataLength = previousBufferSize / bytesPerSample + samples.length;
+    const offsetAfterRiff = writeString(view, "RIFF", 0);
+    view.setUint32(offsetAfterRiff, 36 + dataLength * bytesPerSample, true);
+    const offsetAfterChunkSize = offsetAfterRiff + 4;
+    const offsetAfterWave = writeString(view, "WAVE", offsetAfterChunkSize); //
 
-      const offsetAfterFmt = writeString(view, "fmt ", offsetAfterWave);
-      view.setUint32(offsetAfterFmt, 16, true);
-      const offsetAfterSubchunk1Size = offsetAfterFmt + 4;
-      view.setUint16(offsetAfterSubchunk1Size, 1, true);
-      const offsetAfterAudioFormat = offsetAfterSubchunk1Size + 2;
-      view.setUint16(offsetAfterAudioFormat, numChannels, true);
-      const offsetAfterNumChannels = offsetAfterAudioFormat + 2;
-      view.setUint32(offsetAfterNumChannels, sampleRate, true);
-      const offsetAfterSampleRate = offsetAfterNumChannels + 4;
-      view.setUint32(offsetAfterSampleRate, byteRate, true);
-      const offsetAfterByteRate = offsetAfterSampleRate + 4;
-      view.setUint16(offsetAfterByteRate, blockAlign, true);
-      const offsetAfterBlockAlign = offsetAfterByteRate + 2;
-      view.setUint16(offsetAfterBlockAlign, bytesPerSample * 8, true);
-      const offsetAfterBitsPerSample = offsetAfterBlockAlign + 2;
+    const offsetAfterFmt = writeString(view, "fmt ", offsetAfterWave);
+    view.setUint32(offsetAfterFmt, 16, true);
+    const offsetAfterSubchunk1Size = offsetAfterFmt + 4;
+    view.setUint16(offsetAfterSubchunk1Size, 1, true);
+    const offsetAfterAudioFormat = offsetAfterSubchunk1Size + 2;
+    view.setUint16(offsetAfterAudioFormat, numChannels, true);
+    const offsetAfterNumChannels = offsetAfterAudioFormat + 2;
+    view.setUint32(offsetAfterNumChannels, sampleRate, true);
+    const offsetAfterSampleRate = offsetAfterNumChannels + 4;
+    view.setUint32(offsetAfterSampleRate, byteRate, true);
+    const offsetAfterByteRate = offsetAfterSampleRate + 4;
+    view.setUint16(offsetAfterByteRate, blockAlign, true);
+    const offsetAfterBlockAlign = offsetAfterByteRate + 2;
+    view.setUint16(offsetAfterBlockAlign, bytesPerSample * 8, true);
+    const offsetAfterBitsPerSample = offsetAfterBlockAlign + 2;
 
-      const offsetAfterData = writeString(view, "data", offsetAfterBitsPerSample);
-      view.setUint32(offsetAfterData, samples.length * bytesPerSample, true);
-      return offsetAfterData + 4;
-    };
+    const offsetAfterData = writeString(view, "data", offsetAfterBitsPerSample);
+    view.setUint32(offsetAfterData, dataLength * bytesPerSample, true);
+    const startSamplesOffset = offsetAfterData + previousBufferSize + 4;
 
-    const startSamplesOffset = getHeaderOffset(view, samples, numChannels, sampleRate);
     samples.entries().forEach(([i, sample]) => {
       view.setInt16(startSamplesOffset + i * 2, sample, true);
     });

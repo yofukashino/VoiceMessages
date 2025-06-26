@@ -16,14 +16,19 @@ export default React.memo((props: { onClose: () => void; channel: Types.Channel 
   const VoiceChatting = React.useMemo(() => UltimateChannelStore.getVoiceChannelId(), []);
   const FileInputRef = React.useRef<Types.FileInput | null>();
   const [isRecording, setRecording] = React.useState<boolean>(false);
+  const [isPaused, setPaused] = React.useState<boolean>(false);
   const [file, setFile] = React.useState<File | null>(null);
   const [waveform, setWaveform] = React.useState<string>(null);
   const [durationSecs, setDurationSecs] = React.useState<number>(null);
   const [blobUrl, setBlobUrl] = React.useState<string>();
-
+  const FileBufferRef = React.useRef<ArrayBuffer | null>();
   React.useEffect(() => {
     const makePreview = async () => {
-      if (!file) return;
+      if (!file) {
+        FileBufferRef.current = null;
+        return;
+      }
+      FileBufferRef.current = await file.arrayBuffer();
       const audioContext = new AudioContext();
       const fileArrayBuffer = await file.arrayBuffer();
       setBlobUrl((url) => {
@@ -36,6 +41,10 @@ export default React.memo((props: { onClose: () => void; channel: Types.Channel 
     };
     makePreview();
   }, [file]);
+
+  React.useEffect(() => {
+    if (isPaused) setRecording(true);
+  }, [isPaused, isRecording]);
 
   const [dragHover, setDragHover] = React.useState(false);
   const dndRef = React.useRef<HTMLDivElement | null>(null);
@@ -102,7 +111,9 @@ export default React.memo((props: { onClose: () => void; channel: Types.Channel 
               justify={Flex.Justify.BETWEEN}
               direction={Flex.Direction.VERTICAL}>
               <span className="vmm-content-preview">
-                <Flex className="vmm-content-buttons">
+                <Flex
+                  className="vmm-content-buttons"
+                  key={`${isPaused ? "paused" : "lost-pause"} ${isRecording ? "recording" : "not-recording"}`}>
                   {!file && !isRecording && (
                     <Button color={Button.Colors.BRAND} look={Button.Looks.OUTLINED}>
                       <FileInput
@@ -122,25 +133,53 @@ export default React.memo((props: { onClose: () => void; channel: Types.Channel 
                       Upload Recording
                     </Button>
                   )}
-                  {!file && (
+                  {isRecording && (
+                    <Button
+                      look={Button.Looks.OUTLINED}
+                      color={isPaused ? Button.Colors.PRIMARY : Button.Colors.RED}
+                      onClick={() => {
+                        if (!isPaused) {
+                          setPaused(() => true);
+                          Utils.stopRecording();
+                          return;
+                        }
+                        Utils.startRecording(
+                          `voice-message-${Date.now()}`,
+                          (file) => {
+                            setFile(file);
+                            setRecording(() => false);
+                          },
+                          FileBufferRef.current,
+                        );
+                        setPaused(() => false);
+                      }}>
+                      {isPaused ? "Resume" : "Pause"}
+                    </Button>
+                  )}
+                  {(!file || isRecording || isPaused) && (
                     <Button
                       look={Button.Looks.OUTLINED}
                       color={isRecording ? Button.Colors.RED : Button.Colors.BRAND}
                       onClick={() => {
+                        if (isPaused) {
+                          setPaused(() => false);
+                          setRecording(() => false);
+                          return;
+                        }
                         if (isRecording) {
                           Utils.stopRecording();
                           return;
                         }
                         Utils.startRecording(`voice-message-${Date.now()}`, (file) => {
                           setFile(file);
-                          setRecording(false);
+                          setRecording(() => false);
                         });
-                        setRecording(true);
+                        setRecording(() => true);
                       }}>
                       {isRecording ? "Stop Recording" : "Start Recording"}
                     </Button>
                   )}
-                  {file && !isRecording && (
+                  {file && !isPaused && !isRecording && (
                     <Button
                       look={Button.Looks.OUTLINED}
                       color={Button.Colors.RED}
